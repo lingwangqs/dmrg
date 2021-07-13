@@ -1,0 +1,73 @@
+# Before compiling on the SCC, load the intel compiler module
+# and the intel OpenMPI module.
+#
+# With the "-Wl,-rpath=..." options in the linking to run the code, only
+# the OpenMPI module needs to be loaded.
+#
+#  module load intel/2018
+#  module load openmpi/3.1.1_intel-2018  
+# 
+
+.SUFFIXES: .f90 .f .c .cpp .o
+
+FC=mpif90
+F90=mpif90
+CC=mpicxx
+CXX=mpicxx
+# Optimizations: add support for a few SIMD 
+# instructions, likely to improve performance. 
+# This can be used once development is further along as they
+# increase the compile time
+#OPT_FLAGS= -qopenmp -msse4.2 -axAVX  -O3 -no-prec-div -fp-model fast=2
+# More regular optimization flags:
+OPT_FLAGS= -qopenmp -g -O3
+FFLAGS=${OPT_FLAGS}
+F90FLAGS=${OPT_FLAGS}
+CFLAGS=${OPT_FLAGS}
+CCFLAGS=${OPT_FLAGS}
+CXXFLAGS=${OPT_FLAGS}
+ 
+
+
+all: main_mpi
+
+# Add a debug option, i.e. "make debug" will build without optimization 
+DEBUG_FLAGS= -O1 -g -debug extended -qopenmp
+debug: FFLAGS= ${DEBUG_FLAGS}
+debug: F90FLAGS= ${DEBUG_FLAGS}
+debug: CFLAGS= ${DEBUG_FLAGS}
+debug: CCFLAGS= ${DEBUG_FLAGS}
+debug: CXXFLAGS= ${DEBUG_FLAGS}
+debug: main_mpi
+
+
+# Set the path to the MKL libraries. -rpath adds this path to the 
+# executable as well.  MKLROOT is defined when the intel/2021.1 module
+# is loaded.  Same with $SCC_INTEL_LIB. -rpath lets the executable find
+# the libraries without needing to load the intel module.
+LDFLAGS=   -Wl,-rpath=${SCC_INTEL_LIB} -L${MKLROOT}/lib/intel64 -Wl,-rpath=${MKLROOT}/lib/intel64
+# and the libraries to link against
+# tbbmalloc_proxy is an Intel memory allocator - it forces memory allocations to be
+# aligned on 64-bit memory addresses which is good for performance. It also is multi-threaded
+# and improves memory allocation speed with OpenMP threads.
+LIBS= -lmpi_cxx -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lstdc++ -nofor-main 
+ 
+
+
+main_mpi: main_mpi.o tensor.o tensor_su2.o su2bond.o su2struct.o ran.o sort2.o dmrg_su2.o \
+          dmrg_su2_mpi.o lanczos_su2.o permutation_operator.o
+	${F90} ${F90FLAGS} -o $@ $< tensor.o tensor_su2.o su2bond.o su2struct.o ran.o sort2.o dmrg_su2.o \
+          dmrg_su2_mpi.o lanczos_su2.o permutation_operator.o ${LDFLAGS} ${LIBS} 
+
+
+clean:
+	/bin/rm -f *.o 
+
+.f.o:
+	${FC} ${F77FLAGS} -c $<  ${FCINCLUDE}
+.f90.o:
+	${F90} ${F90FLAGS} -c $< ${FCINCLUDE}
+.c.o:
+	${CC} ${CCFLAGS} -c $< ${CXXINCLUDE}
+.cpp.o:
+	${CXX} ${CXXFLAGS} -c $< ${CXXINCLUDE}

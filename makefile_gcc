@@ -1,0 +1,61 @@
+# Before compiling on the SCC, load these modules:
+#
+#  module load intel/2021.1
+#  module load gcc/10.2.0
+#  module load openmpi/3.1.4_gnu-10.2.0
+
+.SUFFIXES: .f90 .f .c .cpp .o
+
+FC=mpif90
+F90=mpif90
+CC=mpicxx
+CXX=mpicxx
+# Optimizations: add support for a few SIMD 
+# instructions, likely to improve performance. 
+#OPT_FLAGS= -fopenmp -g -O3 -march=nehalem -mtune=intel -ffast-math
+OPT_FLAGS= -fopenmp -g -O2
+
+FFLAGS=${OPT_FLAGS}
+F90FLAGS=${OPT_FLAGS}
+CFLAGS=${OPT_FLAGS}
+CCFLAGS=${OPT_FLAGS}
+CXXFLAGS=${OPT_FLAGS}
+ 
+
+all: main_mpi
+
+# Add a debug option, i.e. "make debug" will build without optimization 
+DEBUG_FLAGS= -g3 -Og -fopenmp
+debug: FFLAGS= ${DEBUG_FLAGS}
+debug: F90FLAGS= ${DEBUG_FLAGS}
+debug: CFLAGS= ${DEBUG_FLAGS}
+debug: CCFLAGS= ${DEBUG_FLAGS}
+debug: CXXFLAGS= ${DEBUG_FLAGS}
+debug: main_mpi
+
+
+# Set the path to the MKL libraries. -rpath adds this path to the 
+# executable as well.  MKLROOT is defined when the intel/2021.1 module
+# is loaded.  Same with $SCC_INTEL_LIB. -rpath lets the executable find
+# the libraries without needing to load the intel module.
+LDFLAGS= -Wl,-rpath=/share/pkg.7/gcc/10.2.0/install/lib64 -L${MKLROOT}/lib/intel64 -Wl,-rpath=${MKLROOT}/lib/intel64  -Wl,--no-as-needed 
+# and the libraries to link against
+LIBS= -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lmpi_cxx -lstdc++ -lgomp -lpthread -lm  -ldl
+
+main_mpi: main_mpi.o tensor.o tensor_su2.o su2bond.o su2struct.o ran.o sort2.o dmrg_su2.o \
+          dmrg_su2_mpi.o lanczos_su2.o permutation_operator.o
+	${F90} ${F90FLAGS} -o $@ $< tensor.o tensor_su2.o su2bond.o su2struct.o ran.o sort2.o dmrg_su2.o \
+          dmrg_su2_mpi.o lanczos_su2.o permutation_operator.o ${LDFLAGS} ${LIBS} 
+
+
+clean:
+	/bin/rm -f *.o 
+
+.f.o:
+	${FC} ${F77FLAGS} -c $<  ${FCINCLUDE}
+.f90.o:
+	${F90} ${F90FLAGS} -c $< ${FCINCLUDE}
+.c.o:
+	${CC} ${CCFLAGS} -c $< ${CXXINCLUDE}
+.cpp.o:
+	${CXX} ${CXXFLAGS} -c $< ${CXXINCLUDE}

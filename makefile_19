@@ -1,0 +1,28 @@
+.SUFFIXES: .f90 .f .c .cpp .o
+
+FC=mpiifort
+F90=mpiifort
+CC=mpiicc
+CXX=mpiicpc
+FFLAGS=-qopenmp -g -O3
+F90FLAGS=-qopenmp -g -O3
+CFLAGS=-qopenmp -g -O3
+CCFLAGS=-qopenmp -g -O3
+CXXFLAGS=-qopenmp -g -O3
+
+
+main_mpi: main_mpi.o tensor.o tensor_su2.o su2bond.o su2struct.o ran.o sort2.o dmrg_su2.o dmrg_su2_mpi.o lanczos_su2.o permutation_operator.o
+	${F90} ${FFLAGS} -o $@ $< tensor.o tensor_su2.o su2bond.o su2struct.o ran.o sort2.o dmrg_su2.o dmrg_su2_mpi.o lanczos_su2.o permutation_operator.o -L/YZGROUP3/home-new/bxkj/soft/intel/2017/impi/2017.4.239/intel64/lib/  -lmpicxx -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lstdc++ -nofor_main 
+
+
+clean:
+	/bin/rm -f *.o 
+
+.f.o:
+	${FC} ${F77FLAGS} -c $<  ${FCINCLUDE}
+.f90.o:
+	${F90} ${F90FLAGS} -c $< ${FCINCLUDE}
+.c.o:
+	${CC} ${CCFLAGS} -c $< ${CXXINCLUDE}
+.cpp.o:
+	${CXX} ${CXXFLAGS} -c $< ${CXXINCLUDE}
