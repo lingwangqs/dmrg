@@ -32,4 +32,11 @@ mpirun -np 2 ./main_mpi -d 100 -dge 400 -dr 50 \
       -sec 0 -jcoup 0.15 -jobid $JOB_ID \
       -memory_flag 0 -psize 2 -mkl 7 -qcoup 1.00
       
-      
+ 
+
+##### Example of an MPI run on 2 28-core nodes
+#### #$ -pe mpi_28_tasks_per_node 56
+####   map-by node spreads the procs to both nodes
+####   bind-to none prevents mpirun from binding the procs AND threads
+####   to single nodes
+#### mpirun -np 2 --map-by node --bind-to none  main_mpi ...
