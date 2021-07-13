@@ -1,0 +1,35 @@
+#!/bin/bash -l
+
+# Request 28 cores
+#$ -pe omp 28
+
+# Email yourself when it's done
+# or there's an error
+#$ -m ea
+
+# Send us both an email
+#$ -M lingwang@bu.edu,bgregor@bu.edu
+
+# Set a time limit.  12 hours is the default
+#$ -l h_rt=12:00:00 
+
+# Specify a project
+#$ -P qspin
+
+# Name the job
+#$ -N dmrg_test
+
+# Join stdout and stderr files
+#$ -j y
+
+ 
+module load intel/2018
+module load openmpi/3.1.1_intel-2018  
+
+
+mpirun -np 2 ./main_mpi -d 100 -dge 400 -dr 50 \
+     -lx 20 -ly 10 -niter 60 -boundary 3 -exci 0 \
+      -sec 0 -jcoup 0.15 -jobid $JOB_ID \
+      -memory_flag 0 -psize 2 -mkl 7 -qcoup 1.00
+      
+      
