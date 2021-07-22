@@ -16,7 +16,7 @@ fast_lut:	$(OBJS)
 	$(CXX) -fopenmp -o $@ $^
 
 %.o:	$(PROJECT_ROOT)%.cpp
-	$(CXX) -std=c++14 -fopenmp -c $(CFLAGS) $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+	$(CXX) -std=c++11 -fopenmp -c $(CFLAGS) $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 %.o:	$(PROJECT_ROOT)%.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
