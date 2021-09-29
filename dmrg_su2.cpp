@@ -8,6 +8,7 @@
 #include <math.h>
 #include <cstring>
 #include <time.h>
+
 using namespace std;
 extern "C"{
   double ran_();
@@ -17,7 +18,7 @@ extern int max_dcut,bdry,myrank,psize,jobid,memory_flag,disk,comm_rank;
 extern double delta,qdelta;
 extern double t1,t2,preparetime,lanczostime,svdtime;
 extern tensor ***spin_op,***cgc_coef_left,***cgc_coef_rght,*cgc_coef_singlet,*identity;
-extern double **spin_op_trace,****fac_operator_onsite_left,****fac_operator_onsite_rght,*****fac_operator_transformation_left,*****fac_operator_transformation_rght,****fac_operator_pairup_left,****fac_operator_pairup_rght,***fac_hamilt_vec,*****fac_permutation_left,*****fac_permutation_rght;
+extern double **spin_op_trace ;
 
 //------------------------------------------------------------------------------
 dmrg_su2::dmrg_su2(int xx, int yy, int sec, int r, int r2, int ex){
@@ -43,6 +44,29 @@ dmrg_su2::dmrg_su2(int xx, int yy, int sec, int r, int r2, int ex){
     if(j<=r&&r!=0||r==0&&j<=max_dcut)nfree++;
     else if(j>r&&r!=0||r==0&&j>max_dcut)break;
   }
+  
+  // Initialize lookup table storage
+  // 5D sparse tables
+  fac_permutation_left = LookupTable_5(0.0, max_angm,max_angm,max_angm,max_angm,18) ;
+	fac_permutation_rght = LookupTable_5(0.0, max_angm,max_angm,max_angm,max_angm,18) ;
+  fac_operator_transformation_left = LookupTable_5(0.0, max_angm,max_angm,max_angm,max_angm,max_angm) ;
+	fac_operator_transformation_rght = LookupTable_5(0.0, max_angm,max_angm,max_angm,max_angm,max_angm) ;
+  // 4D sparse tables
+  fac_operator_onsite_left = LookupTable_4(0.0, max_angm,max_angm,max_angm,max_angm) ;
+  fac_operator_onsite_rght = LookupTable_4(0.0, max_angm,max_angm,max_angm,max_angm) ; 
+  fac_operator_pairup_left = LookupTable_4(0.0, max_angm,max_angm,max_angm,max_angm) ; 
+  fac_operator_pairup_rght = LookupTable_4(0.0, max_angm,max_angm,max_angm,max_angm) ; 
+  // 3D Dense table
+  // Allocate and initialize fac_hamilt_vec to 0.0 
+  fac_hamilt_vec.resize(max_angm) ;
+  for(i=0;i<max_angm;i++) {
+      fac_hamilt_vec[i].resize(max_angm)  ;
+      for(j=0;j<max_angm;j++) {
+          fac_hamilt_vec[i][j].resize(max_angm, 0.0) ; 
+      }
+  }  
+
+  
   nfree=2;
   //if(ly==12&&max_dcut==6000&&totspin==2)nfree=4*ly;
   ww=new double*[exci+1];
@@ -267,53 +291,6 @@ dmrg_su2::~dmrg_su2(){
   delete []cgc_coef_rght;
   delete []cgc_coef_singlet;
   delete []identity;
-  for(i=0;i<max_angm;i++){
-    for(j=0;j<max_angm;j++){
-      for(k=0;k<max_angm;k++){
-	for(l=0;l<max_angm;l++){
-	  delete []fac_operator_transformation_left[i][j][k][l];
-	  delete []fac_operator_transformation_rght[i][j][k][l];
-	  delete []fac_permutation_left[i][j][k][l];
-	  delete []fac_permutation_rght[i][j][k][l];
-	}
-	delete []fac_operator_onsite_left[i][j][k];
-	delete []fac_operator_pairup_left[i][j][k];
-	delete []fac_operator_onsite_rght[i][j][k];
-	delete []fac_operator_pairup_rght[i][j][k];
-	delete []fac_operator_transformation_left[i][j][k];
-	delete []fac_operator_transformation_rght[i][j][k];
-	delete []fac_permutation_left[i][j][k];
-	delete []fac_permutation_rght[i][j][k];
-      }
-      delete []fac_operator_onsite_left[i][j];
-      delete []fac_operator_pairup_left[i][j];
-      delete []fac_operator_onsite_rght[i][j];
-      delete []fac_operator_pairup_rght[i][j];
-      delete []fac_operator_transformation_left[i][j];
-      delete []fac_operator_transformation_rght[i][j];
-      delete []fac_hamilt_vec[i][j];
-      delete []fac_permutation_left[i][j];
-      delete []fac_permutation_rght[i][j];
-    }
-    delete []fac_operator_onsite_left[i];
-    delete []fac_operator_pairup_left[i];
-    delete []fac_operator_onsite_rght[i];
-    delete []fac_operator_pairup_rght[i];
-    delete []fac_operator_transformation_left[i];
-    delete []fac_operator_transformation_rght[i];
-    delete []fac_hamilt_vec[i];
-    delete []fac_permutation_left[i];
-    delete []fac_permutation_rght[i];
-  }
-  delete []fac_operator_onsite_left;
-  delete []fac_operator_pairup_left;
-  delete []fac_operator_onsite_rght;
-  delete []fac_operator_pairup_rght;
-  delete []fac_operator_transformation_left;
-  delete []fac_operator_transformation_rght;
-  delete []fac_hamilt_vec;
-  delete []fac_permutation_left;
-  delete []fac_permutation_rght;
 }
 
 //------------------------------------------------------------------------------
@@ -450,7 +427,7 @@ void dmrg_su2::hamiltonian_vector_multiplication_idmrg(int il, int ir, tensor_su
       j=m/(ns-ir);
       k=m%(ns-ir)+ir;
       if(hmap[j][k]!=0||j==il&&k==ir&&il+1!=ir){
-	tmp.hamiltonian_vector_multiplication(vec1,opr[il][j],opr[ir][k]);
+	tmp.hamiltonian_vector_multiplication(vec1,opr[il][j],opr[ir][k], fac_hamilt_vec);
 	if(hmap[j][k]==1)fac=1-qdelta;
 	else if(hmap[j][k]==2)fac=delta+qdelta/4.;
 	else if(hmap[j][k]==3)fac=delta;
@@ -485,11 +462,11 @@ void dmrg_su2::hamiltonian_vector_multiplication_idmrg(int il, int ir, tensor_su
       k=(m0-m2)/ns;
       if(il!=ir-1||plqflg[il][j]!=1||plqflg[ir][j]!=1)continue;
       if(il>=plqpos[j][0]&&ir<=plqpos[j][1])
-	tmp.hamiltonian_vector_multiplication(vec1,opr[il][plqpos[j][0]],plqopr[ir][m]);
+	tmp.hamiltonian_vector_multiplication(vec1,opr[il][plqpos[j][0]],plqopr[ir][m], fac_hamilt_vec);
       else if(il>=plqpos[j][1]&&ir<=plqpos[j][2])
-	tmp.hamiltonian_vector_multiplication(vec1,plqopr[il][m],plqopr[ir][m]);
+	tmp.hamiltonian_vector_multiplication(vec1,plqopr[il][m],plqopr[ir][m], fac_hamilt_vec);
       else if(il>=plqpos[j][2]&&ir<=plqpos[j][3])
-	tmp.hamiltonian_vector_multiplication(vec1,plqopr[il][m],opr[ir][plqpos[j][3]]);
+	tmp.hamiltonian_vector_multiplication(vec1,plqopr[il][m],opr[ir][plqpos[j][3]], fac_hamilt_vec);
       if(tmp.get_nbond()==0){
 	cout<<"plq something wrong with idmrg"<<endl;
 	cout<<plqpos[j][0]<<"\t"<<plqpos[j][1]<<"\t"<<plqpos[j][2]<<"\t"<<plqpos[j][3]<<"\t"<<il<<"\t"<<ir<<endl;
@@ -569,15 +546,12 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
   cout<<"max_angm="<<max_angm<<endl;
   cgc_coef_left=new tensor**[max_angm];
   cgc_coef_rght=new tensor**[max_angm];
-  fac_hamilt_vec=new double**[max_angm];
   for(i=0;i<max_angm;i++){
     cgc_coef_left[i]=new tensor*[max_angm];
     cgc_coef_rght[i]=new tensor*[max_angm];
-    fac_hamilt_vec[i]=new double*[max_angm];
     for(j=0;j<max_angm;j++){
       cgc_coef_left[i][j]=new tensor[max_angm];
       cgc_coef_rght[i][j]=new tensor[max_angm];
-      fac_hamilt_vec[i][j]=new double[max_angm];
     }
   }
   cgc_coef_singlet=new tensor[max_angm];
@@ -587,12 +561,7 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
     identity[i].make_identity(i);
     //if(comm_rank==0){tmp.contract(cgc_coef_singlet[i],1,cgc_coef_singlet[i],0);tmp1=tmp*(i+1);tmp1.print();}
   }
-
-  for(i=0;i<max_angm;i++)
-    for(j=0;j<max_angm;j++)
-      for(k=0;k<max_angm;k++)
-	fac_hamilt_vec[i][j][k]=0;
-
+        
   for(i=0;i<=6;i++)
     for(j=0;j<max_angm;j++)
       for(k=0;k<max_angm;k++)
@@ -619,28 +588,7 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 	  //if(comm_rank==0)cout<<"i="<<i<<"\tj="<<j<<"\tk="<<k<<"\t"<<fac_hamilt_vec[i][j][k]<<"\t"<<sqrt(k+1)/sqrt(i+1)/sqrt(j+1)<<endl;
 	}
 
-  ////////////////////////////////////
-  fac_operator_onsite_left=new double***[max_angm];
-  fac_operator_onsite_rght=new double***[max_angm];
-  for(i=0;i<max_angm;i++){
-    fac_operator_onsite_left[i]=new double**[max_angm];
-    fac_operator_onsite_rght[i]=new double**[max_angm];    
-    for(j=0;j<max_angm;j++){
-      fac_operator_onsite_left[i][j]=new double*[max_angm];
-      fac_operator_onsite_rght[i][j]=new double*[max_angm];    
-      for(k=0;k<max_angm;k++){
-	fac_operator_onsite_left[i][j][k]=new double[max_angm];
-	fac_operator_onsite_rght[i][j][k]=new double[max_angm];    
-      }
-    }
-  }
-  for(i=0;i<max_angm;i++)
-    for(j=0;j<max_angm;j++)
-      for(k=0;k<max_angm;k++)
-	for(l=0;l<max_angm;l++){
-	  fac_operator_onsite_left[i][j][k][l]=0;
-	  fac_operator_onsite_rght[i][j][k][l]=0;
-	}
+ 
   for(m=0;m<=6;m+=2)
     for(i=0;i<max_angm;i++)
       for(j=0;j<max_angm;j++)
@@ -652,13 +600,13 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 		  if(physpn>=abs(physpn-m)&&physpn<=abs(physpn+m)){
 		    //left operator initialize
 		    tmp1.contract_dmrg_operator_initial(cgc_coef_left[i][physpn][j],cgc_coef_left[k][physpn][l],cgc_coef_left[physpn][m][physpn],0);
-		    check1=tmp1.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_onsite_left[j][m][l][i]);
+		    check1=tmp1.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_onsite_left(j,m,l,i));
 		    if(check1==false&&comm_rank==0){
 		      //cout<<"wrong operator_initialize_left\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\tm="<<m<<"\t"<<fac_operator_onsite_left[j][m][l][i]<<endl;
 		    }
 		    //rght operator initialize
 		    tmp2.contract_dmrg_operator_initial(cgc_coef_rght[physpn][i][j],cgc_coef_rght[physpn][k][l],cgc_coef_left[physpn][m][physpn],1);
-		    check2=tmp2.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_onsite_rght[j][m][l][i]);
+		    check2=tmp2.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_onsite_rght(j,m,l,i));
 		    if(check2==false&&comm_rank==0){
 		      //cout<<"wrong operator_initialize_rght\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\tm="<<m<<"\t"<<fac_operator_onsite_rght[j][m][l][i]<<endl;
 		    }
@@ -668,32 +616,6 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 	      }
 
   ////////////////////////////////////
-  fac_operator_transformation_left=new double****[max_angm];
-  fac_operator_transformation_rght=new double****[max_angm];
-  for(i=0;i<max_angm;i++){
-    fac_operator_transformation_left[i]=new double***[max_angm];
-    fac_operator_transformation_rght[i]=new double***[max_angm];    
-    for(j=0;j<max_angm;j++){
-      fac_operator_transformation_left[i][j]=new double**[max_angm];
-      fac_operator_transformation_rght[i][j]=new double**[max_angm];    
-      for(k=0;k<max_angm;k++){
-	fac_operator_transformation_left[i][j][k]=new double*[max_angm];
-	fac_operator_transformation_rght[i][j][k]=new double*[max_angm];    
-	for(l=0;l<max_angm;l++){
-	  fac_operator_transformation_left[i][j][k][l]=new double[max_angm];
-	  fac_operator_transformation_rght[i][j][k][l]=new double[max_angm];    
-	}
-      }
-    }
-  }
-  for(i=0;i<max_angm;i++)
-    for(j=0;j<max_angm;j++)
-      for(k=0;k<max_angm;k++)
-	for(l=0;l<max_angm;l++)
-	  for(m=0;m<max_angm;m++){
-	    fac_operator_transformation_left[i][j][k][l][m]=0;
-	    fac_operator_transformation_rght[i][j][k][l][m]=0;
-	  }
   for(m=0;m<=6;m+=2)
     for(i=0;i<max_angm;i++)
       for(j=0;j<max_angm;j++)
@@ -704,42 +626,22 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 		if(k>=abs(i-m)&&k<=abs(i+m)&&(k%2==i%2)&&l>=abs(j-m)&&l<=(j+m)&&(j%2==l%2)){
 		  //left canonical form
 		  tmp1.contract_dmrg_operator_transformation(cgc_coef_left[i][physpn][j],cgc_coef_left[k][physpn][l],cgc_coef_left[i][m][k],0);
-		  check1=tmp1.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_transformation_left[j][m][l][i][k]);
+      fac_operator_transformation_left(j,m,l,i,k) = 0.0 ;
+		  check1=tmp1.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_transformation_left(j,m,l,i,k));
 		  if(check1==false&&comm_rank==0){
 		    //cout<<"wrong operator_transformation_left\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\tm="<<m<<"\t"<<fac_operator_transformation_left[j][m][l][i][k]<<endl;
 		  }
 		  //rght canonical form
 		  tmp2.contract_dmrg_operator_transformation(cgc_coef_rght[physpn][i][j],cgc_coef_rght[physpn][k][l],cgc_coef_left[i][m][k],1);
-		  check2=tmp2.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_transformation_rght[j][m][l][i][k]);
+      fac_operator_transformation_rght(j,m,l,i,k) = 0.0 ;
+		  check2=tmp2.is_proportional_to(cgc_coef_left[j][m][l],fac_operator_transformation_rght(j,m,l,i,k));
 		  if(check2==false&&comm_rank==0){
 		    //cout<<"wrong operator_transformation_rght\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\tm="<<m<<"\t"<<fac_operator_transformation_rght[j][m][l][i][k]<<endl;
 		  }
 		  //else if(check2==true&&comm_rank==0)cout<<"crrct operator_transformation_rght\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\tm="<<m<<"\t"<<fac_operator_transformation_rght[j][m][l][i][k]<<endl;
 		}	
 	      }
-  ////////////////////////////////////
-
-  fac_operator_pairup_left=new double***[max_angm];
-  fac_operator_pairup_rght=new double***[max_angm];
-  for(i=0;i<max_angm;i++){
-    fac_operator_pairup_left[i]=new double**[max_angm];
-    fac_operator_pairup_rght[i]=new double**[max_angm];    
-    for(j=0;j<max_angm;j++){
-      fac_operator_pairup_left[i][j]=new double*[max_angm];
-      fac_operator_pairup_rght[i][j]=new double*[max_angm];    
-      for(k=0;k<max_angm;k++){
-	fac_operator_pairup_left[i][j][k]=new double[max_angm];
-	fac_operator_pairup_rght[i][j][k]=new double[max_angm];    
-      }
-    }
-  }
-  for(i=0;i<max_angm;i++)
-    for(j=0;j<max_angm;j++)
-      for(k=0;k<max_angm;k++)
-	for(l=0;l<max_angm;l++){
-	  fac_operator_pairup_left[i][j][k][l]=0;
-	  fac_operator_pairup_rght[i][j][k][l]=0;
-	}
+ 
   for(m=0;m<=6;m+=2)
     for(i=0;i<max_angm;i++)
       for(j=0;j<max_angm;j++)
@@ -752,13 +654,13 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 		  tmp.shift(0,2);
 		  tmp*=sqrt(m+1);
 		  tmp1.contract_dmrg_operator_pairup(cgc_coef_left[i][physpn][j],cgc_coef_left[k][physpn][l],cgc_coef_left[i][m][k],tmp,0);
-		  check1=tmp1.is_proportional_to(identity[j],fac_operator_pairup_left[j][i][k][m]);
+		  check1=tmp1.is_proportional_to(identity[j],fac_operator_pairup_left(j,i,k,m));
 		  if(check1==false&&comm_rank==0){
 		    //cout<<"wrong operator_pairup_left\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\t"<<fac_operator_pairup_left[j][i][k][m]<<endl;
 		  }
 		  //else if(check1==true&&comm_rank==0)cout<<"crrct operator_pairup_rght\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\t"<<fac_operator_pairup_left[j][i][k][m]<<endl;
 		  tmp2.contract_dmrg_operator_pairup(cgc_coef_rght[physpn][i][j],cgc_coef_rght[physpn][k][l],cgc_coef_left[i][m][k],tmp,1);
-		  check2=tmp2.is_proportional_to(identity[j],fac_operator_pairup_rght[j][i][k][m]);
+		  check2=tmp2.is_proportional_to(identity[j],fac_operator_pairup_rght(j,i,k,m));
 		  if(check2==false&&comm_rank==0){
 		    //cout<<"wrong operator_pairup_rght\ti="<<i<<"\tj="<<j<<"\tk="<<k<<"\tl="<<l<<"\t"<<fac_operator_pairup_rght[j][i][k][m]<<endl;
 		  }
@@ -767,32 +669,6 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 	      }
   ////////////////////////////////////
   cout<<"start permutation"<<endl;
-  fac_permutation_left=new double****[max_angm];
-  fac_permutation_rght=new double****[max_angm];
-  for(i=0;i<max_angm;i++){
-    fac_permutation_left[i]=new double***[max_angm];
-    fac_permutation_rght[i]=new double***[max_angm];    
-    for(j=0;j<max_angm;j++){
-      fac_permutation_left[i][j]=new double**[max_angm];
-      fac_permutation_rght[i][j]=new double**[max_angm];    
-      for(k=0;k<max_angm;k++){
-	fac_permutation_left[i][j][k]=new double*[max_angm];
-	fac_permutation_rght[i][j][k]=new double*[max_angm];    
-	for(l=0;l<max_angm;l++){
-	  fac_permutation_left[i][j][k][l]=new double[18];
-	  fac_permutation_rght[i][j][k][l]=new double[18];    
-	}
-      }
-    }
-  }
-  for(i=0;i<max_angm;i++)
-    for(j=0;j<max_angm;j++)
-      for(k=0;k<max_angm;k++)
-	for(l=0;l<max_angm;l++)
-	  for(m=0;m<18;m++){
-	    fac_permutation_left[i][j][k][l][m]=0;
-	    fac_permutation_rght[i][j][k][l][m]=0;
-	  }
     for(i=0;i<max_angm;i++)
       for(j=0;j<max_angm;j++)
 	if(j>=abs(i-physpn)&&j<=abs(i+physpn)){
@@ -816,7 +692,7 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 		      exit(0);
 		    }
 		    else{
-		      fac_permutation_left[i][j][k][l][m]=nor;
+		      fac_permutation_left(i,j,k,l,m)=nor;
 		      //if(comm_rank==0) cout<<"contract permutation_left right\t"<<endl;
 		    }
 		  }
@@ -831,7 +707,7 @@ void dmrg_su2::makeup_clebsch_gordan_coefficient_tensors(int max_angm){
 		      exit(0);
 		    }
 		    else{
-		      fac_permutation_rght[i][j][k][l][m]=nor;
+		      fac_permutation_rght(i,j,k,l,m)=nor;
 		      //if(comm_rank==0) cout<<"contract permutation_rght right\t"<<endl;
 		    }
 		  }

@@ -371,7 +371,7 @@ void dmrg_su2::prepare_site_operator_from_left(int i,int flag){
   double t3,t4;
 
   if(i==0){
-    opr[i][i].operator_initial(uu[i],uu[i],sigma[0],0);
+    opr[i][i].operator_initial(uu[i],uu[i],sigma[0],fac_operator_onsite_left, fac_operator_onsite_rght, 0);
     for(j=0;j<exci;j++){
       ovlp[j][i].overlap_initial(orth[j][i],uu[i],0);
     }
@@ -403,13 +403,13 @@ void dmrg_su2::prepare_site_operator_from_left(int i,int flag){
       m=m0;
       k=m;
       if(fll[i][k]==1)
-	opr[i][k].operator_transformation(uu[i],uu[i],opr[i-1][k],0);
+	opr[i][k].operator_transformation(uu[i],uu[i],opr[i-1][k],fac_operator_transformation_left,fac_operator_transformation_rght,0);
     }
     else if(m0>=m1&&m0<m2){
       m=m0-m1;
       k=m;
       if(hmap[i][k]!=0){
-	htmp.operator_pairup(uu[i],uu[i],opr[i-1][k],sigma[1],0);
+	htmp.operator_pairup(uu[i],uu[i],opr[i-1][k],sigma[1],fac_operator_pairup_left, fac_operator_pairup_rght, 0);
 	for(j=0;j<ns;j++)
 	  if(plqflg[i][j]&&plqpos[j][0]==k&&plqpos[j][1]==i){
 	    plqopr[i][j]=htmp;
@@ -426,7 +426,7 @@ void dmrg_su2::prepare_site_operator_from_left(int i,int flag){
       }
     }
     else if(m0>=m2&&m0<m3)
-      opr[i][i].operator_initial(uu[i],uu[i],sigma[0],0);
+      opr[i][i].operator_initial(uu[i],uu[i],sigma[0],fac_operator_onsite_left,fac_operator_onsite_rght,0);
     else if(m0>=m3&&m0<m4){
       j=m0-m3;
       ovlp[j][i].overlap_transformation(orth[j][i],uu[i],ovlp[j][i-1],0);
@@ -446,9 +446,9 @@ void dmrg_su2::prepare_site_operator_from_left(int i,int flag){
 	if(i==plqpos[j][1])continue;
 	//plqopr[i][m].operator_pairup(uu[i],uu[i],opr[i-1][plqpos[j][0]],sigma[1],0);
 	else if(i==plqpos[j][2])
-	  plqopr[i][m].operator_initial(uu[i],uu[i],sigma[0],plqopr[i-1][m],0);
+	  plqopr[i][m].operator_initial(uu[i],uu[i],sigma[0],plqopr[i-1][m],fac_operator_onsite_left,fac_operator_onsite_rght,0);
 	else if(i==plqpos[j][3]){
-	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i-1][m],sigma[1],0);
+	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i-1][m],sigma[1],fac_operator_pairup_left, fac_operator_pairup_rght, 0);
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
@@ -456,21 +456,21 @@ void dmrg_su2::prepare_site_operator_from_left(int i,int flag){
 	else if(i>plqpos[j][1]&&i<plqpos[j][2])
 	  plqopr[i][m].overlap_transformation(uu[i],uu[i],plqopr[i-1][m],0);
 	else if(i>plqpos[j][2]&&i<plqpos[j][3])
-	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i-1][m],0);
+	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i-1][m],fac_operator_transformation_left,fac_operator_transformation_rght,0);
       }
       else if(k==1){
 	if(i==plqpos[j][1])
-	  plqopr[i][m].permutation(uu[i],uu[i],opr[i-1][plqpos[j][0]],qterm[0],qterm[1],0);
+	  plqopr[i][m].permutation(uu[i],uu[i],opr[i-1][plqpos[j][0]],qterm[0],qterm[1],fac_permutation_left, fac_permutation_rght,0);
 	else if(i==plqpos[j][2])
-	  plqopr[i][m].permutation(uu[i],uu[i],plqopr[i-1][m],qterm[2],qterm[3],0);
+	  plqopr[i][m].permutation(uu[i],uu[i],plqopr[i-1][m],qterm[2],qterm[3],fac_permutation_left, fac_permutation_rght,0);
 	else if(i==plqpos[j][3]){
-	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i-1][m],sigma[1],0);
+	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i-1][m],sigma[1],fac_operator_pairup_left, fac_operator_pairup_rght, 0);  
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
 	}
 	else if(i>plqpos[j][1]&&i<plqpos[j][2]||i>plqpos[j][2]&&i<plqpos[j][3])
-	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i-1][m],0);
+	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i-1][m],fac_operator_transformation_left,fac_operator_transformation_rght,0);
       }
     }
   }
@@ -494,9 +494,9 @@ void dmrg_su2::prepare_site_operator_from_right(int i,int flag){
   double fac;
   double t3,t4;
   if(i==ns-1){
-    opr[i][i].operator_initial(uu[i],uu[i],sigma[1],1);
+    opr[i][i].operator_initial(uu[i],uu[i],sigma[1],fac_operator_onsite_left,fac_operator_onsite_rght, 1);
     for(j=0;j<exci;j++)
-      ovlp[j][i].overlap_initial(orth[j][i],uu[i],1);
+      ovlp[j][i].overlap_initial(orth[j][i],uu[i], 1);
     hh[i].clean();
     return;
   }
@@ -524,13 +524,13 @@ void dmrg_su2::prepare_site_operator_from_right(int i,int flag){
       m=m0;
       k=i+1+m;
       if(frr[i][k]==1)
-	opr[i][k].operator_transformation(uu[i],uu[i],opr[i+1][k],1);
+	opr[i][k].operator_transformation(uu[i],uu[i],opr[i+1][k],fac_operator_transformation_left,fac_operator_transformation_rght,1);
     }
     else if(m0>=m1&&m0<m2){
       m=m0-m1;
       k=i+1+m;
       if(hmap[i][k]!=0){
-	htmp.operator_pairup(uu[i],uu[i],opr[i+1][k],sigma[0],1);
+	htmp.operator_pairup(uu[i],uu[i],opr[i+1][k],sigma[0],fac_operator_pairup_left, fac_operator_pairup_rght, 1);
 	for(j=0;j<ns;j++)
 	  if(plqflg[i][j]&&plqpos[j][3]==k&&plqpos[j][2]==i){
 	    plqopr[i][j]=htmp;
@@ -547,7 +547,7 @@ void dmrg_su2::prepare_site_operator_from_right(int i,int flag){
       }
     }
     else if(m0>=m2&&m0<m3)
-      opr[i][i].operator_initial(uu[i],uu[i],sigma[1],1);
+      opr[i][i].operator_initial(uu[i],uu[i],sigma[1],fac_operator_onsite_left,fac_operator_onsite_rght, 1);
     else if(m0>=m3&&m0<m4){
       j=m0-m3;
       ovlp[j][i].overlap_transformation(orth[j][i],uu[i],ovlp[j][i+1],1);
@@ -565,11 +565,11 @@ void dmrg_su2::prepare_site_operator_from_right(int i,int flag){
       if(i>plqpos[j][2])continue;
       if(k==0){
 	if(i==plqpos[j][2])continue;
-	  //plqopr[i][m].operator_pairup(uu[i],uu[i],opr[i+1][plqpos[j][3]],sigma[0],1);
+	  //plqopr[i][m].operator_pairup(uu[i],uu[i],opr[i+1][plqpos[j][3]],sigma[0],fac_operator_pairup_left, fac_operator_pairup_rght, 1);
 	else if(i==plqpos[j][1])
-	  plqopr[i][m].operator_initial(uu[i],uu[i],sigma[1],plqopr[i+1][m],1);
+	  plqopr[i][m].operator_initial(uu[i],uu[i],sigma[1],plqopr[i+1][m],fac_operator_onsite_left,fac_operator_onsite_rght, 1);
 	else if(i==plqpos[j][0]){
-	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i+1][m],sigma[0],1);
+	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i+1][m],sigma[0],fac_operator_pairup_left, fac_operator_pairup_rght, 1);
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
@@ -577,21 +577,21 @@ void dmrg_su2::prepare_site_operator_from_right(int i,int flag){
 	else if(i>plqpos[j][1]&&i<plqpos[j][2])
 	  plqopr[i][m].overlap_transformation(uu[i],uu[i],plqopr[i+1][m],1);
 	else if(i>plqpos[j][0]&&i<plqpos[j][1])
-	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i+1][m],1);
+	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i+1][m],fac_operator_transformation_left,fac_operator_transformation_rght,1);
       }
       else if(k==1){
 	if(i==plqpos[j][2])
-	  plqopr[i][m].permutation(uu[i],uu[i],opr[i+1][plqpos[j][3]],qterm[2+4],qterm[3+4],1);
+	  plqopr[i][m].permutation(uu[i],uu[i],opr[i+1][plqpos[j][3]],qterm[2+4],qterm[3+4],fac_permutation_left, fac_permutation_rght,1);
 	else if(i==plqpos[j][1])
-	  plqopr[i][m].permutation(uu[i],uu[i],plqopr[i+1][m],qterm[0+4],qterm[1+4],1);
+	  plqopr[i][m].permutation(uu[i],uu[i],plqopr[i+1][m],qterm[0+4],qterm[1+4],fac_permutation_left, fac_permutation_rght,1);
 	else if(i==plqpos[j][0]){
-	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i+1][m],sigma[0],1);
+	  plqopr[i][m].operator_pairup(uu[i],uu[i],plqopr[i+1][m],sigma[0],fac_operator_pairup_left, fac_operator_pairup_rght, 1);
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
 	}
 	else if(i>plqpos[j][1]&&i<plqpos[j][2]||i>plqpos[j][0]&&i<plqpos[j][1])
-	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i+1][m],1);
+	  plqopr[i][m].operator_transformation(uu[i],uu[i],plqopr[i+1][m],fac_operator_transformation_left,fac_operator_transformation_rght,1);
       }
     }
   }
@@ -634,13 +634,13 @@ void dmrg_su2::prepare_site_operator_from_left(int i){
       m=m0;
       k=m;
       if(fll[i][k]==1)
-	opr[i][k].operator_transformation(uu1,uu1,opr[i-1][k],0);
+	opr[i][k].operator_transformation(uu1,uu1,opr[i-1][k],fac_operator_transformation_left,fac_operator_transformation_rght,0);
     }
     else if(m0>=m1&&m0<m2){
       m=m0-m1;
       k=m;
       if(hmap[i][k]!=0){
-	htmp.operator_pairup(uu1,uu1,opr[i-1][k],sigma[1],0);
+	htmp.operator_pairup(uu1,uu1,opr[i-1][k],sigma[1],fac_operator_pairup_left, fac_operator_pairup_rght, 0);
 	for(j=0;j<ns;j++)
 	  if(plqflg[i][j]&&plqpos[j][0]==k&&plqpos[j][1]==i){
 	    plqopr[i][j]=htmp;
@@ -657,7 +657,7 @@ void dmrg_su2::prepare_site_operator_from_left(int i){
       }
     }
     else if(m0>=m2&&m0<m3)
-      opr[i][i].operator_initial(uu1,uu1,sigma[0],0);
+      opr[i][i].operator_initial(uu1,uu1,sigma[0],fac_operator_onsite_left,fac_operator_onsite_rght, 0);
     else if(m0>=m3&&m0<m4){
       m=m0-m3;
       j=(m0-m3)%ns;
@@ -668,9 +668,9 @@ void dmrg_su2::prepare_site_operator_from_left(int i){
 	if(i==plqpos[j][1])continue;
 	//plqopr[i][m].operator_pairup(uu1,uu1,opr[i-1][plqpos[j][0]],sigma[1],0);
 	else if(i==plqpos[j][2])
-	  plqopr[i][m].operator_initial(uu1,uu1,sigma[0],plqopr[i-1][m],0);
+	  plqopr[i][m].operator_initial(uu1,uu1,sigma[0],plqopr[i-1][m],fac_operator_onsite_left,fac_operator_onsite_rght, 0);
 	else if(i==plqpos[j][3]){
-	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i-1][m],sigma[1],0);
+	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i-1][m],sigma[1],fac_operator_pairup_left, fac_operator_pairup_rght, 0);
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
@@ -678,21 +678,21 @@ void dmrg_su2::prepare_site_operator_from_left(int i){
 	else if(i>plqpos[j][1]&&i<plqpos[j][2])
 	  plqopr[i][m].overlap_transformation(uu1,uu1,plqopr[i-1][m],0);
 	else if(i>plqpos[j][2]&&i<plqpos[j][3])
-	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i-1][m],0);
+	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i-1][m],fac_operator_transformation_left,fac_operator_transformation_rght,0);
       }
       else if(k==1){
 	if(i==plqpos[j][1])
-	  plqopr[i][m].permutation(uu1,uu1,opr[i-1][plqpos[j][0]],qterm[0],qterm[1],0);
+	  plqopr[i][m].permutation(uu1,uu1,opr[i-1][plqpos[j][0]],qterm[0],qterm[1],fac_permutation_left, fac_permutation_rght,0);
 	else if(i==plqpos[j][2])
-	  plqopr[i][m].permutation(uu1,uu1,plqopr[i-1][m],qterm[2],qterm[3],0);
+	  plqopr[i][m].permutation(uu1,uu1,plqopr[i-1][m],qterm[2],qterm[3],fac_permutation_left, fac_permutation_rght,0);
 	else if(i==plqpos[j][3]){
-	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i-1][m],sigma[1],0);
+	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i-1][m],sigma[1],fac_operator_pairup_left, fac_operator_pairup_rght, 0);
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
 	}
 	else if(i>plqpos[j][1]&&i<plqpos[j][2]||i>plqpos[j][2]&&i<plqpos[j][3])
-	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i-1][m],0);
+	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i-1][m],fac_operator_transformation_left,fac_operator_transformation_rght,0);
       }
     }
   }
@@ -733,13 +733,13 @@ void dmrg_su2::prepare_site_operator_from_right(int i){
       m=m0;
       k=i+1+m;
       if(frr[i][k]==1)
-	opr[i][k].operator_transformation(uu1,uu1,opr[i+1][k],1);
+	opr[i][k].operator_transformation(uu1,uu1,opr[i+1][k],fac_operator_transformation_left,fac_operator_transformation_rght,1);
     }
     else if(m0>=m1&&m0<m2){
       m=m0-m1;
       k=i+1+m;
       if(hmap[i][k]!=0){
-	htmp.operator_pairup(uu1,uu1,opr[i+1][k],sigma[0],1);
+	htmp.operator_pairup(uu1,uu1,opr[i+1][k],sigma[0],fac_operator_pairup_left, fac_operator_pairup_rght, 1);
 	for(j=0;j<ns;j++)
 	  if(plqflg[i][j]&&plqpos[j][3]==k&&plqpos[j][2]==i){
 	    plqopr[i][j]=htmp;
@@ -756,7 +756,7 @@ void dmrg_su2::prepare_site_operator_from_right(int i){
       }
     }
     else if(m0>=m2&&m0<m3)
-      opr[i][i].operator_initial(uu1,uu1,sigma[1],1);
+      opr[i][i].operator_initial(uu1,uu1,sigma[1],fac_operator_onsite_left,fac_operator_onsite_rght, 1);
     else if(m0>=m3&&m0<m4){
       m=m0-m3;
       j=(m0-m3)%ns;
@@ -767,9 +767,9 @@ void dmrg_su2::prepare_site_operator_from_right(int i){
 	if(i==plqpos[j][2])continue;
 	//plqopr[i][m].operator_pairup(uu1,uu1,opr[i+1][plqpos[j][3]],sigma[0],1);
 	else if(i==plqpos[j][1])
-	  plqopr[i][m].operator_initial(uu1,uu1,sigma[1],plqopr[i+1][m],1);
+	  plqopr[i][m].operator_initial(uu1,uu1,sigma[1],plqopr[i+1][m],fac_operator_onsite_left,fac_operator_onsite_rght, 1);
 	else if(i==plqpos[j][0]){
-	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i+1][m],sigma[0],1);
+	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i+1][m],sigma[0],fac_operator_pairup_left, fac_operator_pairup_rght, 1);
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
@@ -777,21 +777,21 @@ void dmrg_su2::prepare_site_operator_from_right(int i){
 	else if(i>plqpos[j][1]&&i<plqpos[j][2])
 	  plqopr[i][m].overlap_transformation(uu1,uu1,plqopr[i+1][m],1);
 	else if(i>plqpos[j][0]&&i<plqpos[j][1])
-	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i+1][m],1);
+	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i+1][m],fac_operator_transformation_left,fac_operator_transformation_rght,1);
       }
       else if(k==1){
 	if(i==plqpos[j][2])
-	  plqopr[i][m].permutation(uu1,uu1,opr[i+1][plqpos[j][3]],qterm[2+4],qterm[3+4],1);
+	  plqopr[i][m].permutation(uu1,uu1,opr[i+1][plqpos[j][3]],qterm[2+4],qterm[3+4],fac_permutation_left, fac_permutation_rght,1);
 	else if(i==plqpos[j][1])
-	  plqopr[i][m].permutation(uu1,uu1,plqopr[i+1][m],qterm[0+4],qterm[1+4],1);
+	  plqopr[i][m].permutation(uu1,uu1,plqopr[i+1][m],qterm[0+4],qterm[1+4],fac_permutation_left, fac_permutation_rght,1);
 	else if(i==plqpos[j][0]){
-	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i+1][m],sigma[0],1);
+	  plqopr[i][m].operator_pairup(uu1,uu1,plqopr[i+1][m],sigma[0],fac_operator_pairup_left, fac_operator_pairup_rght, 1);
 	  plqopr[i][m]*=-qdelta;
 	  if(hh2[myrank].get_nbond()==0)hh2[myrank]=plqopr[i][m];
 	  else hh2[myrank]+=plqopr[i][m];
 	}
 	else if(i>plqpos[j][1]&&i<plqpos[j][2]||i>plqpos[j][0]&&i<plqpos[j][1])
-	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i+1][m],1);
+	  plqopr[i][m].operator_transformation(uu1,uu1,plqopr[i+1][m],fac_operator_transformation_left,fac_operator_transformation_rght,1);
       }
     }
   }

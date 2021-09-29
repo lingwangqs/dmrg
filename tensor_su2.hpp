@@ -1,5 +1,13 @@
+#ifndef TENSOR_SU2_H
+#define TENSOR_SU2_H
+
+
 #include "tensor.hpp"
 #include "su2struct.hpp"
+
+#include "lut/LookupTable.hpp"
+
+#include "typedefs.h"
 
 using namespace std;
 
@@ -77,7 +85,7 @@ public:
   bool operator != (tensor_su2&); 
   double inner_prod(tensor_su2&);
   double take_trace();
-  double ss_inner_prod(tensor_su2&);
+  double ss_inner_prod(tensor_su2&, const VecDbl3 &fac_hamilt_vec);
   tensor* get_parr(int);
   tensor* get_pcgc(int);
   su2struct& get_cgc();
@@ -97,10 +105,13 @@ public:
   void orthogonalize(tensor_su2*,int);
   void overlap_initial(tensor_su2&,tensor_su2&,int);
   void overlap_transformation(tensor_su2&,tensor_su2&,tensor_su2&,int);
-  void operator_initial(tensor_su2&,tensor_su2&,tensor_su2&,int);
-  void operator_initial(tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,int);
-  void operator_transformation(tensor_su2&,tensor_su2&,tensor_su2&,int);
-  void operator_pairup(tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,int);
-  void hamiltonian_vector_multiplication(tensor_su2&,tensor_su2&,tensor_su2&);
-  void permutation(tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,int);
+  void operator_initial(tensor_su2&,tensor_su2&,tensor_su2&,const LookupTable_4&, const LookupTable_4&, int);
+  void operator_initial(tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,const LookupTable_4&, const LookupTable_4&,int);
+  void operator_transformation(tensor_su2&,tensor_su2&,tensor_su2&,const LookupTable_5&, const LookupTable_5&,int);
+  void operator_pairup(tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,const LookupTable_4&, const LookupTable_4&, int);
+  void hamiltonian_vector_multiplication(tensor_su2&,tensor_su2&,tensor_su2&, const VecDbl3 &fac_hamilt_vec);
+  void permutation(tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,tensor_su2&,const LookupTable_5&, const LookupTable_5&,int);
 };
+
+
+#endif

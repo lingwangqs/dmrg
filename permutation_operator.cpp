@@ -12,7 +12,6 @@ using namespace std;
 
 void get_tensor_index(int&,int,int*,int*);
 void get_bond_index(int,int,int*,int*);
-extern double *****fac_permutation_left,*****fac_permutation_rght,****fac_operator_onsite_left,****fac_operator_onsite_rght;
 extern tensor *cgc_coef_singlet;
 extern int comm_rank;
 
@@ -784,8 +783,10 @@ tensor& tensor::contract_dmrg_permutation(tensor& uu, tensor& vv, tensor& vec, t
   //this->print();
 }
 
+
 //--------------------------------------------------------------------------------------
-void tensor_su2::permutation(tensor_su2& uu, tensor_su2& vv, tensor_su2& vec, tensor_su2& op1, tensor_su2& op2, int flag){
+void tensor_su2::permutation(tensor_su2& uu, tensor_su2& vv, tensor_su2& vec, tensor_su2& op1, tensor_su2& op2, 
+                             const LookupTable_5& fac_permutation_left, const LookupTable_5& fac_permutation_rght,int flag){
 //--------------------------------------------------------------------------------------
   int a0,a1,a2,b0,b1,b2,c0,c1,c2,d0,d1,d2,e0,e1,e2,nmoma0,nmoma1,nmoma2,nmomb0,nmomb1,nmomb2,nmomc0,nmomc1,nmomc2,nmomd0,nmomd1,nmomd2,nmome0,nmome1,nmome2,i0,i1,i2,j0,j1,j2,k0,k1,k2,l0,l1,l2,s0,s1,s2,m,n,p,q,r,t,i;
   su2bond *bb;
@@ -902,9 +903,9 @@ void tensor_su2::permutation(tensor_su2& uu, tensor_su2& vv, tensor_su2& vec, te
 				  t=c2/2+((c0-1)/2)*3+(d2/2)*6;
 				}
 				if(flag==0)
-				  fac=fac_permutation_left[a0][a2][b0][b2][t];
+				  fac=fac_permutation_left(a0,a2,b0,b2,t);
 				else if(flag==1)
-				  fac=fac_permutation_rght[a1][a2][b1][b2][t];
+				  fac=fac_permutation_rght(a1,a2,b1,b2,t);
 				tmp1*=fac;
 				if(tarr[i].is_null()){
 				  tarr[i]=tmp1;
@@ -952,7 +953,8 @@ tensor& tensor::contract_dmrg_operator_initial(tensor& t1, tensor& t2, tensor& t
 }
 
 //--------------------------------------------------------------------------------------
-void tensor_su2::operator_initial(tensor_su2& uu, tensor_su2& vv, tensor_su2& op, tensor_su2& endt, int flag){//end tensor is not identity
+void tensor_su2::operator_initial(tensor_su2& uu, tensor_su2& vv, tensor_su2& op, tensor_su2& endt, 
+                                  const LookupTable_4& fac_operator_onsite_left, const LookupTable_4& fac_operator_onsite_rght,int flag){//end tensor is not identity
 //--------------------------------------------------------------------------------------
   //build three index operator from current site
   int a0,a1,a2,b0,b1,b2,c0,c1,c2,d0,d1,nmoma0,nmoma1,nmoma2,nmomb0,nmomb1,nmomb2,nmomc0,nmomc1,nmomc2,nmomd0,nmomd1,i0,i1,i2,j0,j1,j2,k0,k1,k2,l0,l1,m,n,p,q,i;
@@ -1042,9 +1044,9 @@ void tensor_su2::operator_initial(tensor_su2& uu, tensor_su2& vv, tensor_su2& op
 			  if(uu.is_null(m)||vv.is_null(n)||op.is_null(p)||endt.is_null(q))continue;
 			  tmp1.contract_dmrg_operator_initial(*(uu.get_parr(m)),*(vv.get_parr(n)),*(op.get_parr(p)),*(endt.get_parr(q)),flag);
 			  if(flag==0)
-			    fac=fac_operator_onsite_left[a2][c1][b2][a0];
+			    fac=fac_operator_onsite_left(a2,c1,b2,a0);
 			  else if(flag==1)
-			    fac=fac_operator_onsite_rght[a2][c1][b2][a1];
+			    fac=fac_operator_onsite_rght(a2,c1,b2,a1);
 			  tmp1*=fac;
 			  if(tarr[i].is_null()){
 			    tarr[i]=tmp1;

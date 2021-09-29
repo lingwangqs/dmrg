@@ -1,4 +1,13 @@
+#ifndef DMRG_SU2_H
+#define DMRG_SU2_H
+
 #include "lanczos_su2.hpp"
+
+#include "lut/LookupTable.hpp"
+
+#include "typedefs.h"
+
+
 using namespace std;
 
 class dmrg_su2{
@@ -63,4 +72,21 @@ inline  dmrg_su2(){};
   void check_mps_cgc();
   void wavefunc_transformation(int,int);
   void test_su2bond();
+  
+  // 5D sparse lookup tables
+  LookupTable_5 fac_permutation_left, fac_permutation_rght;
+	LookupTable_5 fac_operator_transformation_left, fac_operator_transformation_rght ;
+
+  // 4D sparse lookup tables
+  LookupTable_4 fac_operator_onsite_left ;
+  LookupTable_4 fac_operator_onsite_rght ;
+  LookupTable_4 fac_operator_pairup_left ;
+  LookupTable_4 fac_operator_pairup_rght ;
+  
+  // 3D dense lookup table
+  VecDbl3 fac_hamilt_vec ;
+
 };
+
+
+#endif

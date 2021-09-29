@@ -13,7 +13,7 @@ extern "C"{
 }
 extern int comm_rank,psize,myrank;
 extern tensor ***spin_op,*cgc_coef_singlet,*identity;
-extern double **spin_op_trace,****fac_operator_onsite_left,****fac_operator_onsite_rght,*****fac_operator_transformation_left,*****fac_operator_transformation_rght,****fac_operator_pairup_left,****fac_operator_pairup_rght,***fac_hamilt_vec;
+extern double **spin_op_trace,****fac_operator_onsite_left,****fac_operator_onsite_rght,****fac_operator_pairup_left,****fac_operator_pairup_rght,***fac_hamilt_vec;
 extern "C"{
   void dgemm_(char*,char*,int*,int*,int*,double*,double*,int*,double*,int*,double*,double*,int*);
 }
@@ -684,7 +684,7 @@ double tensor_su2::inner_prod(tensor_su2& t1){
 }
 
 //--------------------------------------------------------------------------------------
-double tensor_su2::ss_inner_prod(tensor_su2& t1){
+double tensor_su2::ss_inner_prod(tensor_su2& t1, const VecDbl3 &fac_hamilt_vec){
 //--------------------------------------------------------------------------------------
   int i,*angm,*bdim,*cdim,a0,a1,a2;
   double prod,prod1,prod2;
@@ -2504,7 +2504,7 @@ void tensor_su2::overlap_transformation(tensor_su2& uu, tensor_su2& vv, tensor_s
 }
 
 //--------------------------------------------------------------------------------------
-void tensor_su2::operator_initial(tensor_su2& uu, tensor_su2& vv, tensor_su2& op, int flag){
+void tensor_su2::operator_initial(tensor_su2& uu, tensor_su2& vv, tensor_su2& op, const LookupTable_4& fac_operator_onsite_left, const LookupTable_4& fac_operator_onsite_right, int flag){
 //--------------------------------------------------------------------------------------
   //build three index operator from current site
   int a0,a1,a2,b0,b1,b2,c0,c1,c2,nmoma0,nmoma1,nmoma2,nmomb0,nmomb1,nmomb2,nmomc0,nmomc1,nmomc2,i0,i1,i2,j0,j1,j2,k0,k1,k2,m,n,p,i;
@@ -2582,9 +2582,9 @@ void tensor_su2::operator_initial(tensor_su2& uu, tensor_su2& vv, tensor_su2& op
 		    if(uu.is_null(m)||vv.is_null(n)||op.is_null(p))continue;
 		    tmp1.contract_dmrg_operator_initial(*(uu.get_parr(m)),*(vv.get_parr(n)),*(op.get_parr(p)),flag);
 		    if(flag==0)
-		      fac=fac_operator_onsite_left[a2][c1][b2][a0];
+		      fac=fac_operator_onsite_left(a2,c1,b2,a0);
 		    else if(flag==1)
-		      fac=fac_operator_onsite_rght[a2][c1][b2][a1];
+		      fac=fac_operator_onsite_right(a2,c1,b2,a1);
 		    tmp1*=fac;
 		    if(tarr[i].is_null()){
 		      tarr[i]=tmp1;
@@ -2604,7 +2604,7 @@ void tensor_su2::operator_initial(tensor_su2& uu, tensor_su2& vv, tensor_su2& op
 }
 
 //--------------------------------------------------------------------------------------
-void tensor_su2::operator_transformation(tensor_su2& uu, tensor_su2& vv, tensor_su2& op,int flag){
+void tensor_su2::operator_transformation(tensor_su2& uu, tensor_su2& vv, tensor_su2& op,const LookupTable_5& fac_operator_transformation_left, const LookupTable_5& fac_operator_transformation_rght,int flag){
 //--------------------------------------------------------------------------------------
   int a0,a1,a2,b0,b1,b2,c0,c1,c2,nmoma0,nmoma1,nmoma2,nmomb0,nmomb1,nmomb2,nmomc0,nmomc1,nmomc2,i0,i1,i2,j0,j1,j2,k0,k1,k2,m,n,p,i;
   su2bond *bb;
@@ -2682,9 +2682,9 @@ void tensor_su2::operator_transformation(tensor_su2& uu, tensor_su2& vv, tensor_
 		    if(uu.is_null(m)||vv.is_null(n)||op.is_null(p))continue;
 		    tmp1.contract_dmrg_operator_transformation(*(uu.get_parr(m)),*(vv.get_parr(n)),*(op.get_parr(p)),flag);
 		    if(flag==0)
-		      fac=fac_operator_transformation_left[a2][c1][b2][a0][b0];
+		      fac=fac_operator_transformation_left(a2,c1,b2,a0,b0);
 		    else if(flag==1)
-		      fac=fac_operator_transformation_rght[a2][c1][b2][a1][b1];
+		      fac=fac_operator_transformation_rght(a2,c1,b2,a1,b1);
 		    tmp1*=fac;
 		    if(tarr[i].is_null()){
 		      tarr[i]=tmp1;
@@ -2704,7 +2704,8 @@ void tensor_su2::operator_transformation(tensor_su2& uu, tensor_su2& vv, tensor_
 }
 
 //--------------------------------------------------------------------------------------
-void tensor_su2::operator_pairup(tensor_su2& uu, tensor_su2& vv, tensor_su2& op1, tensor_su2& op2, int flag){
+void tensor_su2::operator_pairup(tensor_su2& uu, tensor_su2& vv, tensor_su2& op1, tensor_su2& op2, 
+                                 const LookupTable_4& fac_operator_pairup_left, const LookupTable_4& fac_operator_pairup_rght, int flag){
 //--------------------------------------------------------------------------------------
   int a0,a1,a2,b0,b1,b2,c0,c1,c2,d0,d1,d2,nmoma0,nmoma1,nmoma2,nmomb0,nmomb1,nmomb2,nmomc0,nmomc1,nmomc2,nmomd0,nmomd1,nmomd2,i0,i1,i2,j0,j1,j2,k0,k1,k2,l0,l1,l2,m,n,p,q,i;
   su2bond *bb;
@@ -2799,9 +2800,9 @@ void tensor_su2::operator_pairup(tensor_su2& uu, tensor_su2& vv, tensor_su2& op1
 			  if(uu.is_null(m)||vv.is_null(n)||op1.is_null(p)||op2.is_null(q))continue;
 			  tmp1.contract_dmrg_operator_pairup(*(uu.get_parr(m)),*(vv.get_parr(n)),*(op1.get_parr(p)),*(op2.get_parr(q)),flag);
 			  if(flag==0)
-			    fac=fac_operator_pairup_left[a2][a0][b0][c1];
+			    fac=fac_operator_pairup_left(a2,a0,b0,c1);
 			  else if(flag==1)
-			    fac=fac_operator_pairup_rght[a2][a1][b1][c1];
+			    fac=fac_operator_pairup_rght(a2,a1,b1,c1);
 			  tmp1*=fac;
 			  if(tarr[i].is_null()){
 			    tarr[i]=tmp1;
@@ -2824,7 +2825,8 @@ void tensor_su2::operator_pairup(tensor_su2& uu, tensor_su2& vv, tensor_su2& op1
 }
 
 //--------------------------------------------------------------------------------------
-void tensor_su2::hamiltonian_vector_multiplication(tensor_su2& vec, tensor_su2& op1, tensor_su2& op2){
+void tensor_su2::hamiltonian_vector_multiplication(tensor_su2& vec, tensor_su2& op1, tensor_su2& op2, 
+                                                   const VecDbl3 &fac_hamilt_vec){
 //--------------------------------------------------------------------------------------
   int a0,a1,a2,b0,b1,b2,c0,c1,c2,nmoma0,nmoma1,nmoma2,nmomb0,nmomb1,nmomb2,nmomc0,nmomc1,nmomc2,i0,i1,i2,j0,j1,j2,k0,k1,k2,m,n,p,i,j,angm[3];
   su2bond *bb;

@@ -1,3 +1,7 @@
+#ifndef TENSOR_H
+#define TENSOR_H
+
+
 using namespace std;
 
 class tensor{
@@ -95,3 +99,6 @@ public:
   bool is_proportional_to(tensor&,double&);
   void shift_copy(int,int,int,int,int,int,tensor&);
 };
+
+
+#endif
