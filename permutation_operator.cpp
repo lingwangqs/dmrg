@@ -932,7 +932,7 @@ void tensor_su2::permutation(tensor_su2& uu, tensor_su2& vv, tensor_su2& vec, te
 }
 
 //--------------------------------------------------------------------------------------
-tensor& tensor::contract_dmrg_operator_initial(tensor& t1, tensor& t2, tensor& t3, tensor& endt, int flag){
+void tensor::contract_dmrg_operator_initial(tensor& t1, tensor& t2, tensor& t3, tensor& endt, int flag){
 //--------------------------------------------------------------------------------------
   if(flag==0&&(t1.bonddim[1]!=t3.bonddim[0]||t2.bonddim[1]!=t3.bonddim[2]||t1.bonddim[0]!=endt.bonddim[0]||t2.bonddim[0]!=endt.bonddim[1])){
     cout<<"tensor::contract_dmrg_operator_initial bonddim not consistent"<<endl;

@@ -404,32 +404,7 @@ void tensor::print(){
 
 }
 
-//--------------------------------------------------------------------------------------
-void tensor::exchangeindex(int ind1,int ind2){
-	//--------------------------------------------------------------------------------------
-	int i,j ;
-	if(ind1==ind2)  return;
-	int aa[psize][psize] ;
-	int bdim[nbond];
-	memcpy(bdim,bonddim,sizeof(int)*nbond) ;
-	std::swap(bdim[ind1],bdim[ind2]) ;
-
-	double tele[nelement];
-	//#pragma omp parallel for default(shared) private(i,j,myrank) schedule(static,1)
-	for(i=0;i<nelement;i++){
-		//myrank=omp_get_thread_num();
-		myrank=0;
-		get_bond_index(i,nbond,bonddim,aa[myrank]);
-		j=aa[myrank][ind1];
-		std::swap(aa[myrank][ind1],aa[myrank][ind2]) ;
-		get_tensor_index(j,nbond,bdim,aa[myrank]);
-		tele[j]=telement[i];
-	}
-	memcpy(telement,tele,sizeof(double) * nelement) ;
-	memcpy(bonddim,bdim, sizeof(int) * nbond) ;
-}
-
-/*
+ 
 //--------------------------------------------------------------------------------------
 void tensor::exchangeindex(int ind1,int ind2){
 //--------------------------------------------------------------------------------------
@@ -464,39 +439,10 @@ void tensor::exchangeindex(int ind1,int ind2){
   for(i=0;i<psize;i++)
     delete []aa[i];
   delete []aa;
-} */
+}  
 
 
-//--------------------------------------------------------------------------------------
-void tensor::shift(int i0,int i1){
-//--------------------------------------------------------------------------------------
-	int i,j,ishift ;
- 	if(i0==i1)return;
-	int bdim[nbond];
-	if(i1>i0) {
-		ishift=i1-i0;
-	} else {
-		ishift=nbond-(i0-i1);
-	}
-	for(i=0;i<nbond;i++) {
-		bdim[(i+ishift)%nbond]=bonddim[i];
-	}
-	int aa[nbond];
-	int bb[nbond];
-	double tele[nelement];
-	for(i=0;i<nelement;i++){
-		get_bond_index(i,nbond,bonddim,aa);
-		for(j=0;j<nbond;j++) {
-			bb[(j+ishift)%nbond]=aa[j];
-		}
-		get_tensor_index(j,nbond,bdim,bb);
-		tele[j]=telement[i];
-	}
-	memcpy(telement,tele, sizeof(double) * nelement) ;
-	memcpy(bonddim, bdim, sizeof(int) * nbond) ;
-}
 
-/*
 //--------------------------------------------------------------------------------------
 void tensor::shift(int i0,int i1){
 //--------------------------------------------------------------------------------------
@@ -525,7 +471,7 @@ void tensor::shift(int i0,int i1){
   delete []aa;
   delete []bb;
 }
-*/
+
 //--------------------------------------------------------------------------------------
 void tensor::mergeindex(int ind1,int ind2){
 //--------------------------------------------------------------------------------------
@@ -668,7 +614,7 @@ tensor& tensor::contract_dmrg_overlap_initial(tensor& t1, tensor& t2, int flag){
 }
 
 //--------------------------------------------------------------------------------------
-tensor& tensor::contract_dmrg_operator_initial(tensor& t1, tensor& t2, tensor& t3, int flag){
+void tensor::contract_dmrg_operator_initial(tensor& t1, tensor& t2, tensor& t3, int flag){
 //--------------------------------------------------------------------------------------
   if(flag==0&&(t1.bonddim[1]!=t3.bonddim[0]||t2.bonddim[1]!=t3.bonddim[2])){
     cout<<"tensor::contract_dmrg_operator_initial bonddim not consistent"<<endl;
@@ -703,7 +649,7 @@ tensor& tensor::contract_dmrg_operator_initial(tensor& t1, tensor& t2, tensor& t
 }
 
 //--------------------------------------------------------------------------------------
-tensor& tensor::contract_dmrg_operator_transformation(tensor& t1, tensor& t2, tensor& t3, int flag){
+void tensor::contract_dmrg_operator_transformation(tensor& t1, tensor& t2, tensor& t3, int flag){
 //--------------------------------------------------------------------------------------
   if(flag==0&&(t1.bonddim[0]!=t3.bonddim[0]||t2.bonddim[0]!=t3.bonddim[2])){
     cout<<"tensor::contract_dmrg_operator_transformation bonddim not consistent"<<endl;
@@ -768,7 +714,7 @@ tensor& tensor::contract_dmrg_operator_transformation(tensor& t1, tensor& t2, te
 }
 
 //--------------------------------------------------------------------------------------
-tensor& tensor::contract_dmrg_operator_pairup(tensor& uu, tensor& vv, tensor& op1, tensor& op2, int flag){
+void tensor::contract_dmrg_operator_pairup(tensor& uu, tensor& vv, tensor& op1, tensor& op2, int flag){
 //--------------------------------------------------------------------------------------
   //this routine realize operator pairup in dmrg procedure
   if(flag==0&&(uu.bonddim[0]!=op1.bonddim[0]||vv.bonddim[0]!=op1.bonddim[2])){

@@ -58,10 +58,10 @@ public:
   tensor& contractindex(int,int);
   tensor& contract_dmrg_overlap_initial(tensor&,tensor&,int);//contract first two indices
   tensor& contract_dmrg_overlap_transformation(tensor&,tensor&,tensor&,int);//contract three tensors for dmrg overlap_transformation
-  tensor& contract_dmrg_operator_initial(tensor&,tensor&,tensor&,int);//contract three tensors for dmrg operator_initial
-  tensor& contract_dmrg_operator_initial(tensor&,tensor&,tensor&,tensor&,int);//contract three tensors for dmrg operator_initial
-  tensor& contract_dmrg_operator_transformation(tensor&,tensor&,tensor&,int);//contract three tensors for dmrg operator_transform
-  tensor& contract_dmrg_operator_pairup(tensor&,tensor&,tensor&,tensor&,int);//contract four tensors for dmrg operator_pairup
+  void contract_dmrg_operator_initial(tensor&,tensor&,tensor&,int);//contract three tensors for dmrg operator_initial
+  void contract_dmrg_operator_initial(tensor&,tensor&,tensor&,tensor&,int);//contract three tensors for dmrg operator_initial
+  void contract_dmrg_operator_transformation(tensor&,tensor&,tensor&,int);//contract three tensors for dmrg operator_transform
+  void contract_dmrg_operator_pairup(tensor&,tensor&,tensor&,tensor&,int);//contract four tensors for dmrg operator_pairup
   tensor& contract_dmrg_permutation(tensor&,tensor&,tensor&,tensor&,tensor&,int);
 
   //void svd(tensor&,double,tensor&,double,int);
