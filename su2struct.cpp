@@ -306,7 +306,7 @@ bool su2struct::check_angularmoments(int* angm){
 //--------------------------------------------------------------------------------------
   su2bond *bb;
   int mom[1] ;
-  int dim[1]
+  int dim[1] ;
   int i;
   bool check;
   if(nbond==1)
