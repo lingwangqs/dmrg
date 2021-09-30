@@ -58,6 +58,8 @@ public:
         //  getter for the default value.
         double get_default_value() const ;
         
+        // get info from the hash table for diagnostics
+        uint64_t overflow_size() ;
 protected:
         // What's the default value of an unfilled index?
         double m_default_value  ;

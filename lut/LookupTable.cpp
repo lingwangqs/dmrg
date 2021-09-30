@@ -12,6 +12,8 @@
 #include <stdexcept>
 #include <sstream>
 
+#include "backward.hpp"
+using namespace backward;
 
 LookupTable::LookupTable(const double default_value, const std::initializer_list<int> dims) :
         m_default_value(default_value) {
@@ -32,36 +34,27 @@ inline double LookupTable::operator()(const std::initializer_list<int> inds) con
 	uint64_t ind = sub2ind(inds) ;
 	// For use with multiple threads - the "omp critical" forces serialization on
 	// the read and possible update to m_hash. see the assign() method for an example.
-	double value  = m_default_value ;
+	double value  ;
 //#pragma omp critical (hash_access)
 //	{
 	// Check to see if it's in the table already.
 	// The type of check is that of a const iterator into the map.
 	auto check = m_hash.find(ind);
 	if (check != m_hash.end()) {
-		value = check->second ;
-	}
-	// If it wasn't found then it was never assigned so its value
-	// is whatever the default value is.
+		value = check->second ;  // Found it!
+	} else {
+                value  = m_default_value ; // Use the default value.
+        }
 //	} // can't return from inside an omp critical section.
 	return value ;
 }
 
 inline double& LookupTable::operator ()(const std::initializer_list<int> inds) {
-	// Set a value in the hash table.  If it's not there, insert an m_default_value
-	// before returning.
-	// Look up a value.
+	// Set a value in the hash table.  
 	uint64_t ind = sub2ind(inds) ;
-	auto check = m_hash.find(ind);
-	// This value was not yet inserted, so assign it to
-	// the default value.
-	if (check == m_hash.end()) {
-		m_hash[ind] = m_default_value ;
-	}
-	// This could be done a little more tidily so that
-	// we don't have to lookup twice when a value wasn't
-	// yet inserted but this should be ok.
-	return m_hash[ind] ;
+        // Returning the value by reference is enough - if this index value
+        // doesn't exist it will be created.
+        return m_hash[ind] ;
 }
 
 
@@ -96,6 +89,22 @@ inline uint64_t LookupTable::sub2ind(const std::initializer_list<int> inds) cons
 			msg << elem << ", " ;
 		}
 		msg << "]." ;
+                
+// Pretty print a stack trace
+StackTrace st; st.load_here(32);
+
+TraceResolver tr; tr.load_stacktrace(st);
+for (size_t i = 0; i < st.size(); ++i) {
+	ResolvedTrace trace = tr.resolve(st[i]);
+	std::cout << "#" << i
+		<< " " << trace.object_filename
+		<< " " << trace.object_function
+		<< " [" << trace.addr << "]"
+	<< std::endl << std::flush;
+}
+
+                
+                
 		throw std::runtime_error(msg.str()) ;
 	}
 	return offset ;
@@ -123,6 +132,9 @@ double LookupTable::get_default_value() const {
         return m_default_value ;
 }
         
+uint64_t LookupTable::overflow_size() {
+        return m_hash.overflow_size() ;
+}
 
 
 LookupTable_5::LookupTable_5(const double default_value, const int dim0, const int dim1, const int dim2,
