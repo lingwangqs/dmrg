@@ -12,9 +12,6 @@
 #include <stdexcept>
 #include <sstream>
 
-#include "backward.hpp"
-using namespace backward;
-
 LookupTable::LookupTable(const double default_value, const std::initializer_list<int> dims) :
         m_default_value(default_value) {
 	// Store the dimensions
@@ -89,22 +86,6 @@ inline uint64_t LookupTable::sub2ind(const std::initializer_list<int> inds) cons
 			msg << elem << ", " ;
 		}
 		msg << "]." ;
-                
-// Pretty print a stack trace
-StackTrace st; st.load_here(32);
-
-TraceResolver tr; tr.load_stacktrace(st);
-for (size_t i = 0; i < st.size(); ++i) {
-	ResolvedTrace trace = tr.resolve(st[i]);
-	std::cout << "#" << i
-		<< " " << trace.object_filename
-		<< " " << trace.object_function
-		<< " [" << trace.addr << "]"
-	<< std::endl << std::flush;
-}
-
-                
-                
 		throw std::runtime_error(msg.str()) ;
 	}
 	return offset ;
