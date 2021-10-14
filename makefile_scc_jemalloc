@@ -6,6 +6,7 @@
 #
 #  module load intel/2018
 #  module load openmpi/3.1.1_intel-2018  
+#  module load jemalloc/5.2.1
 
 .SUFFIXES: .f90 .f .c .cpp .o
 
@@ -17,8 +18,9 @@ CXX=mpicxx
 #OPT_FLAGS= -qopenmp -g3  -O3 -mavx  
 # Fancy optimization flags that support multiple SIMD instruction sets:
 OPT_FLAGS= -qopenmp -g3  -O3  -no-prec-div -fp-model fast=2   -mavx -axCORE-AVX2,CORE-AVX512
-# Statically link in the jemalloc library
-EXTRA_LDFLAGS=
+# Statically link in the jemalloc library. Make sure this is 
+# the last thing linked below.
+EXTRA_LDFLAGS=${SCC_JEMALLOC_LIB}/libjemalloc_pic.a 
  
 FFLAGS=${OPT_FLAGS}
 F90FLAGS=${OPT_FLAGS}

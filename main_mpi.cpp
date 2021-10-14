@@ -1,3 +1,7 @@
+#ifdef MI_MALLOC
+#include "mimalloc-new-delete.h"
+#endif 
+
 #include <mpi.h>
 #include <omp.h>
 #include <mkl.h>
@@ -10,6 +14,8 @@
 #include <sys/types.h>
 #include <time.h>
 #include <cstring>
+
+
 
 using namespace std;
 int max_dcut=8000,myrank=0,psize=12,mkl=1,comm_rank,comm_size,thread,bdry=0,jobid,memory_flag=0;
@@ -130,8 +136,9 @@ int main(int argc,char** argv){
 
   omp_set_num_threads(psize);
   mkl_set_num_threads(mkl);
+  // This is needed to allow MKL to run in parallel 
   omp_set_nested(1);
-  omp_set_max_active_levels(2);
+ // omp_set_max_active_levels(2);
   mkl_set_dynamic(0);
 
   dmrg_su2 chain(lx,ly,sec,read,read2,exci);

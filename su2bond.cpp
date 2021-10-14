@@ -177,14 +177,14 @@ void su2bond::fuse(su2bond& b1,su2bond& b2){
       moms=abs(mom1-mom2);
       mome=abs(mom1+mom2);
       for(k=moms;k<=mome;k+=2){
-	flag=1;
-	for(l=0;l<num;l++){
-	  if(ang[l]==k){
-	    dim[l]+=dim1*dim2;
-	    flag=0;
-	    break;
-	  }
-	}
+        flag=1;
+        for(l=0;l<num;l++){
+          if(ang[l]==k){
+            dim[l]+=dim1*dim2;
+            flag=0;
+            break;
+          }
+        }
 	if(flag){
 	  ang[num]=k;
 	  dim[num]=dim1*dim2;

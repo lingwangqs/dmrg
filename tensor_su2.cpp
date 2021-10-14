@@ -13,7 +13,7 @@ void dsort2_(int*,double*,int*);
 }
 extern int comm_rank,psize,myrank;
 extern tensor ***spin_op,*cgc_coef_singlet,*identity;
-extern double **spin_op_trace,****fac_operator_onsite_left,****fac_operator_onsite_rght,****fac_operator_pairup_left,****fac_operator_pairup_rght,***fac_hamilt_vec;
+extern double **spin_op_trace ;
 extern "C"{
 void dgemm_(char*,char*,int*,int*,int*,double*,double*,int*,double*,int*,double*,double*,int*);
 }
@@ -2277,7 +2277,7 @@ void tensor_su2::make_spinor_start(int physpn){
     //--------------------------------------------------------------------------------------
     su2bond *bb;
     int *angm,*bdim;
-    double *tele;
+    double tele[1];
     //direction -1 out going, direction 1 in going
     //order: down, horizontal, up
     clean();
@@ -2286,7 +2286,6 @@ void tensor_su2::make_spinor_start(int physpn){
     bb=new su2bond[nbond];
     angm=new int[nbond];
     bdim=new int[nbond];
-    tele=new double[1];
     angm[0]=physpn;
     bdim[0]=1;
     bb[0].set_su2bond(1,-1,angm,bdim);
@@ -2314,7 +2313,6 @@ void tensor_su2::make_spinor_start(int physpn){
     tcgc[0].make_cgc(physpn,2,physpn);
     delete []angm;
     delete []bdim;
-    delete []tele;
     delete []bb;
 }
 

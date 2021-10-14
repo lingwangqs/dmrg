@@ -6,8 +6,7 @@
 #include <string.h>
 #include <math.h>
 
-
-
+ 
 using namespace std;
 
 extern "C"{
@@ -64,8 +63,7 @@ tensor::tensor(int nb, int *bdim, double *tele){
   }
   telement=new double[nelement];
   //#pragma omp parallel for default(shared) private(i) 
-  for(i=0;i<nelement;i++)
-    telement[i]=tele[i];
+  memcpy(telement,tele,sizeof(double) * nelement) ;
 }
 
 //--------------------------------------------------------------------------------------
@@ -235,7 +233,10 @@ tensor& tensor::operator = (const tensor& t1){
   for(i=0;i<nbond;i++)
     bonddim[i]=t1.get_bonddim(i);
   //#pragma omp parallel for default(shared) private(i) 
-  for(i=0;i<nelement;i++)telement[i]=t1.get_telement(i);
+  memcpy(telement, t1.telement, sizeof(double) * nelement) ;
+  //for(i=0;i<nelement;i++) {
+  //  telement[i]=t1.get_telement(i);
+  //}
   return *this;
 }
 
@@ -248,7 +249,7 @@ bool tensor::operator != (const tensor& t1){
   if(t1.get_nelement()!=nelement)return true;
   for(i=0;i<nelement;i++)
     //if(fabs(fabs(t1.get_telement(i))-fabs(telement[i]))>tolerance)return true;
-    if(fabs(t1.get_telement(i)-telement[i])>tolerance)return true;
+    if(fabs(t1.telement[i]-telement[i])>tolerance)return true;
   return false;
 }
 
@@ -263,8 +264,9 @@ bool tensor::operator == (const tensor& t1){
 tensor& tensor::operator = (double zero){
 //--------------------------------------------------------------------------------------
   int i;
-  for(i=0;i<nelement;i++)
+  for(i=0;i<nelement;i++) {
     telement[i]=zero;
+  }
   return *this;
 }
 
@@ -280,9 +282,12 @@ tensor& tensor::operator += (const tensor& t1 ){
     t2.print();
     exit(0);
   }
-  if(t1.get_nbond()==0)return *this;
-  for(i=0;i<nelement;i++)
-    telement[i]+=t1.get_telement(i);
+  if(t1.get_nbond()==0) {
+    return *this;
+  }
+  for(i=0;i<nelement;i++) {
+    telement[i] += t1.telement[i];
+  }
   return *this;
 }
 
@@ -295,8 +300,9 @@ tensor& tensor::operator -= (const tensor& t1 ){
     exit(0);
   }
   if(t1.get_nbond()==0)return *this;
+  
   for(i=0;i<nelement;i++)
-    telement[i]-=t1.get_telement(i);
+    telement[i] -= t1.telement[i];
   return *this;
 }
 
@@ -327,10 +333,11 @@ tensor tensor::operator / (double aa){
   t2.telement=new double[nelement];
   t2.nbond=nbond;
   t2.bonddim=new int[nbond];
+  aa = 1.0 / aa ;
   for(i=0;i<nbond;i++)
     t2.bonddim[i]=bonddim[i];
   for(i=0;i<nelement;i++)
-    t2.telement[i]=telement[i]/aa;
+    t2.telement[i]=telement[i] * aa;
   return t2;
 }
 
@@ -371,18 +378,24 @@ tensor tensor::operator - (const tensor& t1){
 //--------------------------------------------------------------------------------------
 tensor& tensor::operator *= (double c){
 //--------------------------------------------------------------------------------------
-  int i,j;
+  int i;
   //#pragma omp parallel for default(shared) private(i) 
-  for(i=0;i<nelement;i++)telement[i]*=c;
+  //for(i=0;i<nelement;i++)telement[i]*=c;
+  for(i=0;i<nelement;i++) {
+    telement[i]*=c;
+  }
   return *this;
 }
 
 //--------------------------------------------------------------------------------------
 tensor& tensor::operator /= (double c){
 //--------------------------------------------------------------------------------------
-  int i,j;
+  int i ;
   //#pragma omp parallel for default(shared) private(i) 
-  for(i=0;i<nelement;i++)telement[i]/=c;
+  c = 1.0 / c ;
+  for(i=0;i<nelement;i++) {
+    telement[i]*=c;
+  }
   return *this;
 }
 

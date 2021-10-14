@@ -279,10 +279,8 @@ bool su2struct::get_tensor_argument(int i0, int* angm, int* bdim, int* cdim){
   if(nbond==1&&angm[0]!=locspin)return false;
   else if(nbond==1&&angm[0]==locspin)return true;
   su2bond *bb;
-  int *mom,*dim;
+  int mom[1],dim[1];
   bb=new su2bond[nbond+1];
-  mom=new int[1];
-  dim=new int[1];
   for(i=0;i<nbond;i++){
     dim[0]=1;
     mom[0]=angm[i];
@@ -294,8 +292,6 @@ bool su2struct::get_tensor_argument(int i0, int* angm, int* bdim, int* cdim){
     bb[i]=bb[nbond];
   }
   check=bb[nbond].check_angularmoment(locspin);
-  delete []dim;
-  delete []mom;
   delete []bb;
   if(check) return true;
   else return false;

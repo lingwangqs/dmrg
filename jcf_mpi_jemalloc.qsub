@@ -1,0 +1,47 @@
+#!/bin/bash -l
+
+
+#$ -N jemalloc_dmrg_mpi
+
+# Request 2 nodes with 28 core each
+#$ -pe mpi_28_tasks_per_node 56
+ 
+#$ -l h_rt=12:00:00
+#$ -m ea
+
+#$ -j y
+
+
+DATA_DIR=/projectnb/bg-rcs/users/lingwang/git/dmrg/mpi/2.00/20_10/0.15
+
+# 28 cores per node, each OMP thread can spawn 2 MKL threads for a 
+# total of 28 threads per node
+PSIZE=14
+MKLSIZE=2
+
+module load intel/2018
+module load openmpi/3.1.1_intel-2018
+
+echo PE_HOSTFILE
+cat $PE_HOSTFILE
+ 
+# Use Intel KMP flags because we're using Intel threads.
+# Make sure the OpenMP threads are split up round-robin across
+# the sockets.  Each socket gets 7 openmp threads, which should
+# spawn 2 mkl threads when needed.
+export KMP_AFFINITY=scatter
+# 16M is the recommended stacksize from Intel, the default is 4M. 
+export  KMP_STACKSIZE=16M
+# Tell OpenMP threads to sleep if they're not busy
+export KMP_LIBRARY=throughput
+
+# These flags were tested with jemalloc for performance.
+export MALLOC_CONF="metadata_thp:auto,percpu_arena:percpu"
+
+# Exported variables are automatically sent to all of the MPI nodes
+cd $DATA_DIR/50
+time mpirun  -np 2 --map-by node --bind-to none /projectnb/bg-rcs/users/lingwang/git/dmrg/main_mpi -d 50 -dge 3000 -dr 50 -lx 20 -ly 10 -niter 3 -boundary 3 -exci 0 -sec 0 -jcoup 0.15 -jobid $JOB_ID -memory_flag 0 -psize $PSIZE -mkl $MKLSIZE -qcoup 1.00
+
+cd $DATA_DIR/100
+time mpirun  -np 2 --map-by node --bind-to none /projectnb/bg-rcs/users/lingwang/git/dmrg/main_mpi -d 100 -dge 3000 -dr 50 -lx 20 -ly 10 -niter 3 -boundary 3 -exci 0 -sec 0 -jcoup 0.15 -jobid $JOB_ID -memory_flag 0 -psize $PSIZE -mkl $MKLSIZE -qcoup 1.00
+
