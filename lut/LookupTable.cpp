@@ -134,9 +134,9 @@ double LookupTable::get_default_value() const {
         return m_default_value ;
 }
         
-uint64_t LookupTable::overflow_size() {
-        return m_hash.overflow_size() ;
-}
+//uint64_t LookupTable::overflow_size() {
+//        return m_hash.overflow_size() ;
+//}
 
 
 LookupTable_5::LookupTable_5(const double default_value, const int dim0, const int dim1, const int dim2,

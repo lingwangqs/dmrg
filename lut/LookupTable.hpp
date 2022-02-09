@@ -13,8 +13,8 @@
 #include <cstdint>
 #include <vector>
 #include <cassert>
-#include "tsl/hopscotch_map.h"
-
+//#include "tsl/hopscotch_map.h"
+#include <map>
 
 // This implements a sparse N-dimensional lookup table.
 // It stores double precision values. It could be templated
@@ -59,7 +59,7 @@ public:
         double get_default_value() const ;
         
         // get info from the hash table for diagnostics
-        uint64_t overflow_size() ;
+        //uint64_t overflow_size() ;
 protected:
         // What's the default value of an unfilled index?
         double m_default_value  ;
@@ -84,11 +84,12 @@ protected:
         // This is computed from the indices, see sub2ind() below.
         // The hopscotch_map also has built-in serialization so it could be saved and read
         // from disk if desired.
-        tsl::hopscotch_map<uint64_t, double> m_hash ;
+        //tsl::hopscotch_map<uint64_t, double> m_hash ;
+        std::map<uint64_t, double> m_hash ;
 
         // Compute the linear vector index from a set of indices.
         // named sub2ind after the function that does this in Matlab.
-    uint64_t sub2ind(const std::initializer_list<int> inds) const ;
+        uint64_t sub2ind(const std::initializer_list<int> inds) const ;
 };
 
 // Specific implementations for 5D, 4D, 3D, 2D, and 1D tables.
